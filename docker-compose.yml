@@ -13,7 +13,6 @@ services:
       - .env
     environment:
       - DEBUG=True
-      - ALLOWED_HOSTS=localhost,127.0.0.1
       - DB_PATH=/app/db_data/db.sqlite3
 
 volumes:
