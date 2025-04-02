@@ -107,20 +107,20 @@
             <div class="card-body">
                 <h4>RFID Scan Endpoint</h4>
                 <p>Use your API key to authenticate requests to the RFID scan endpoint:</p>
-                
+
                 <h5>URL</h5>
                 <pre class="bg-light p-3 rounded"><code>POST /api/rfid-scan/?api_key=YOUR_API_KEY</code></pre>
-                
+
                 <h5>Headers</h5>
                 <pre class="bg-light p-3 rounded"><code>Content-Type: application/json
 X-API-Key: YOUR_API_KEY  # Alternative to query parameter</code></pre>
-                
+
                 <h5>Request Body</h5>
                 <pre class="bg-light p-3 rounded"><code>{
     "tag_id": "RFID_TAG_ID",
     "event_type": "entry" or "exit" (optional)
 }</code></pre>
-                
+
                 <h5>Example (Python)</h5>
                 <pre class="bg-light p-3 rounded"><code>import requests
 import json
@@ -150,16 +150,62 @@ print(response.json())</code></pre>
         document.querySelectorAll('.copy-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const text = this.getAttribute('data-clipboard-text');
-                navigator.clipboard.writeText(text).then(() => {
-                    // Change button text temporarily
-                    const originalText = this.textContent;
-                    this.textContent = 'Copied!';
-                    setTimeout(() => {
-                        this.textContent = originalText;
-                    }, 2000);
-                });
+
+                // Try to use the Clipboard API first
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => {
+                            showCopiedMessage(this);
+                        })
+                        .catch(err => {
+                            // If Clipboard API fails, use fallback
+                            fallbackCopyTextToClipboard(text, this);
+                        });
+                } else {
+                    // Fallback for browsers/environments that don't support Clipboard API
+                    fallbackCopyTextToClipboard(text, this);
+                }
             });
         });
+
+        // Fallback function to copy text using a temporary textarea element
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+
+            // Make the textarea out of viewport
+            textArea.style.position = "fixed";
+            textArea.style.left = "-999999px";
+            textArea.style.top = "-999999px";
+            document.body.appendChild(textArea);
+
+            // Focus and select the text
+            textArea.focus();
+            textArea.select();
+
+            let successful = false;
+            try {
+                // Execute the copy command
+                successful = document.execCommand('copy');
+                if (successful) {
+                    showCopiedMessage(button);
+                }
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+            }
+
+            // Clean up
+            document.body.removeChild(textArea);
+        }
+
+        // Function to show "Copied!" message
+        function showCopiedMessage(button) {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
     });
 </script>
 {% endblock %}
