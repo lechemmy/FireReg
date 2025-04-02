@@ -72,6 +72,8 @@ A web application for tracking staff entering and exiting a building using RFID 
 
 ## Running the Application
 
+### Option 1: Running Locally
+
 1. Start the development server:
    ```
    python manage.py runserver
@@ -82,6 +84,31 @@ A web application for tracking staff entering and exiting a building using RFID 
    - Admin site: http://localhost:8000/admin/
    - Current staff: http://localhost:8000/current/
    - Event logs: http://localhost:8000/logs/
+
+### Option 2: Running with Docker
+
+1. Make sure you have Docker and Docker Compose installed on your system.
+
+2. Build and start the Docker containers:
+   ```
+   docker-compose up --build
+   ```
+
+3. Access the application in your web browser:
+   - Home page: http://localhost:8000/
+   - Admin site: http://localhost:8000/admin/
+   - Current staff: http://localhost:8000/current/
+   - Event logs: http://localhost:8000/logs/
+
+4. To run the application in the background:
+   ```
+   docker-compose up -d
+   ```
+
+5. To stop the application:
+   ```
+   docker-compose down
+   ```
 
 ## API Usage
 
