@@ -1,0 +1,57 @@
+{% extends 'register/base.html' %}
+
+{% block title %}Event Log - Fire Register{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Entry/Exit Event Log</h2>
+            </div>
+            <div class="card-body">
+                {% if logs %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Event</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                    <tr>
+                                        <td>{{ log.user.get_full_name|default:log.user.username }}</td>
+                                        <td>
+                                            {% if log.event_type == 'entry' %}
+                                                <span class="badge bg-success">Entry</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Exit</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ log.timestamp|date:"F j, Y, g:i a" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted mt-3">Showing the most recent 100 events.</p>
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">No entry/exit events have been recorded yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <p class="text-muted mb-0">Last updated: {% now "F j, Y, g:i a" %}</p>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="{% url 'register:index' %}" class="btn btn-secondary">Back to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
