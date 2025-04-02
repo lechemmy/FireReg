@@ -30,7 +30,7 @@
                                         <td>
                                             {% if key.is_active %}
                                                 <div class="input-group">
-                                                    <input type="text" class="form-control" value="{{ key.key }}" readonly>
+                                                    <input type="text" class="form-control" value="{{ key.get_masked_key }}" readonly>
                                                     <button class="btn btn-outline-secondary copy-btn" type="button" data-clipboard-text="{{ key.key }}">
                                                         Copy
                                                     </button>

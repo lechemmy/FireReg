@@ -30,17 +30,35 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:current_staff' %}">Current Staff</a>
                     </li>
+                    {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:event_log' %}">Event Log</a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:cards' %}">Cards</a>
                     </li>
+                    {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:api_keys' %}">API Keys</a>
                     </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register:fire_marshals' %}">Fire Marshals</a>
+                    </li>
                 </ul>
                 <div class="d-flex">
+                    {% if user.is_authenticated %}
+                    <span class="navbar-text me-3 text-light">
+                        {{ user.username }}
+                        {% if user.groups.all.0.name == 'Fire Marshal' %}
+                        <span class="badge bg-warning">Fire Marshal</span>
+                        {% endif %}
+                    </span>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-light me-2">Logout</a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Login</a>
+                    {% endif %}
                     <button id="theme-toggle" class="btn btn-outline-light theme-toggle">
                         <span id="theme-icon">🌙</span>
                     </button>

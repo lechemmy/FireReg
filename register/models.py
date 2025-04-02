@@ -67,5 +67,11 @@ class APIKey(models.Model):
             self.key = uuid.uuid4().hex
         super().save(*args, **kwargs)
 
+    def get_masked_key(self):
+        """Return a masked version of the key, showing only the first 6 characters."""
+        if not self.key:
+            return ""
+        return self.key[:6] + "..." if len(self.key) > 6 else self.key
+
     def __str__(self):
         return f"{self.name} ({self.user.username})"

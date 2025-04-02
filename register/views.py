@@ -6,11 +6,44 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.contrib import messages
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
+from django.contrib.auth.forms import UserCreationForm, SetPasswordForm
+from django import forms
 from .models import RFIDTag, EntryExitLog, StaffPresence, Card, APIKey
 import json
 import csv
 import io
+
+# Custom forms for Fire Marshal management
+class FireMarshalForm(forms.ModelForm):
+    """Form for creating and editing Fire Marshals."""
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput, required=False)
+    password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'is_active']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        if password1 or password2:
+            if password1 != password2:
+                raise forms.ValidationError("Passwords don't match")
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if self.cleaned_data.get('password1'):
+            user.set_password(self.cleaned_data['password1'])
+        if commit:
+            user.save()
+            # Ensure user is in Fire Marshal group
+            fire_marshal_group, _ = Group.objects.get_or_create(name='Fire Marshal')
+            fire_marshal_group.user_set.add(user)
+        return user
 
 @csrf_exempt
 @require_POST
@@ -171,6 +204,11 @@ def exit_staff(request):
 @login_required
 def event_log(request):
     """View to display logs of entry/exit events."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have access to the Event Log.')
+        return redirect('register:index')
+
     logs = EntryExitLog.objects.all().select_related('user')[:100]  # Limit to last 100 events
 
     return render(request, 'register/event_log.html', {
@@ -193,6 +231,11 @@ def cards(request):
 @login_required
 def api_keys(request):
     """View to display and manage API keys for the current user."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have access to API Keys.')
+        return redirect('register:index')
+
     user_api_keys = APIKey.objects.filter(user=request.user).order_by('-created_at')
 
     return render(request, 'register/api_keys.html', {
@@ -203,6 +246,11 @@ def api_keys(request):
 @require_POST
 def create_api_key(request):
     """View to create a new API key for the current user."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have access to API Keys.')
+        return redirect('register:index')
+
     name = request.POST.get('name', '').strip()
 
     if not name:
@@ -222,6 +270,11 @@ def create_api_key(request):
 @require_POST
 def revoke_api_key(request, key_id):
     """View to revoke (deactivate) an API key."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have access to API Keys.')
+        return redirect('register:index')
+
     try:
         api_key = APIKey.objects.get(id=key_id, user=request.user)
         api_key.is_active = False
@@ -446,3 +499,72 @@ def register_cards(request):
         messages.warning(request, f'Failed to register {error_count} card(s). Card numbers must be unique.')
 
     return redirect('register:cards')
+
+@login_required
+def fire_marshals(request):
+    """View to display and manage Fire Marshals."""
+    # Ensure Fire Marshal group exists
+    fire_marshal_group, created = Group.objects.get_or_create(name='Fire Marshal')
+
+    # Get all users in the Fire Marshal group
+    fire_marshals = User.objects.filter(groups=fire_marshal_group).order_by('username')
+
+    return render(request, 'register/fire_marshals.html', {
+        'fire_marshals': fire_marshals,
+    })
+
+@login_required
+def add_fire_marshal(request):
+    """View to add a new Fire Marshal."""
+    if request.method == 'POST':
+        form = FireMarshalForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Fire Marshal added successfully.')
+            return redirect('register:fire_marshals')
+    else:
+        form = FireMarshalForm()
+
+    return render(request, 'register/fire_marshal_form.html', {
+        'form': form,
+        'title': 'Add Fire Marshal',
+    })
+
+@login_required
+def edit_fire_marshal(request, user_id):
+    """View to edit an existing Fire Marshal."""
+    user = get_object_or_404(User, id=user_id)
+
+    # Ensure user is a Fire Marshal
+    fire_marshal_group = Group.objects.get(name='Fire Marshal')
+    if not user.groups.filter(id=fire_marshal_group.id).exists():
+        messages.error(request, 'User is not a Fire Marshal.')
+        return redirect('register:fire_marshals')
+
+    if request.method == 'POST':
+        form = FireMarshalForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Fire Marshal updated successfully.')
+            return redirect('register:fire_marshals')
+    else:
+        form = FireMarshalForm(instance=user)
+
+    return render(request, 'register/fire_marshal_form.html', {
+        'form': form,
+        'title': 'Edit Fire Marshal',
+        'user': user,
+    })
+
+@login_required
+@require_POST
+def delete_fire_marshal(request, user_id):
+    """View to remove a user from the Fire Marshal group."""
+    user = get_object_or_404(User, id=user_id)
+
+    # Remove user from Fire Marshal group
+    fire_marshal_group = Group.objects.get(name='Fire Marshal')
+    fire_marshal_group.user_set.remove(user)
+
+    messages.success(request, f'{user.username} removed from Fire Marshals.')
+    return redirect('register:fire_marshals')
