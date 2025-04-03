@@ -516,6 +516,11 @@ def fire_marshals(request):
 @login_required
 def add_fire_marshal(request):
     """View to add a new Fire Marshal."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have permission to add new Fire Marshals.')
+        return redirect('register:fire_marshals')
+
     if request.method == 'POST':
         form = FireMarshalForm(request.POST)
         if form.is_valid():
@@ -533,6 +538,11 @@ def add_fire_marshal(request):
 @login_required
 def edit_fire_marshal(request, user_id):
     """View to edit an existing Fire Marshal."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have permission to edit Fire Marshals.')
+        return redirect('register:fire_marshals')
+
     user = get_object_or_404(User, id=user_id)
 
     # Ensure user is a Fire Marshal
@@ -560,6 +570,11 @@ def edit_fire_marshal(request, user_id):
 @require_POST
 def delete_fire_marshal(request, user_id):
     """View to remove a user from the Fire Marshal group."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have permission to remove Fire Marshals.')
+        return redirect('register:fire_marshals')
+
     user = get_object_or_404(User, id=user_id)
 
     # Remove user from Fire Marshal group

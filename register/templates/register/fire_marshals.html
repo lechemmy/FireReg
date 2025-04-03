@@ -6,13 +6,15 @@
 <div class="row mb-4">
     <div class="col">
         <h1>Fire Marshals</h1>
-        <p class="lead">Manage Fire Marshal users</p>
+        <p class="lead">{% if not request.user.groups.all.0.name == 'Fire Marshal' %}Manage{% else %}View{% endif %} Fire Marshal users</p>
     </div>
+    {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
     <div class="col-auto">
         <a href="{% url 'register:add_fire_marshal' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Add Fire Marshal
         </a>
     </div>
+    {% endif %}
 </div>
 
 {% if fire_marshals %}
@@ -41,6 +43,7 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
                         <a href="{% url 'register:edit_fire_marshal' user.id %}" class="btn btn-sm btn-outline-primary">
                             Edit
                         </a>
@@ -51,6 +54,9 @@
                                 Remove
                             </button>
                         </form>
+                        {% else %}
+                        <span class="text-muted">No actions available</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -59,7 +65,10 @@
     </div>
 {% else %}
     <div class="alert alert-info">
-        No Fire Marshals found. <a href="{% url 'register:add_fire_marshal' %}">Add one now</a>.
+        No Fire Marshals found. 
+        {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
+        <a href="{% url 'register:add_fire_marshal' %}">Add one now</a>.
+        {% endif %}
     </div>
 {% endif %}
 {% endblock %}
