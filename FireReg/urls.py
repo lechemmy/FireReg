@@ -16,9 +16,29 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.auth.views import LogoutView
+from django.contrib.auth import logout as auth_logout
+from django.http import HttpResponseRedirect
+
+class CustomLogoutView(LogoutView):
+    """
+    Custom LogoutView that handles both GET and POST requests.
+    This ensures users are properly logged out regardless of request method.
+    """
+    http_method_names = ['get', 'post', 'options']
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests by logging out the user and redirecting."""
+        auth_logout(request)
+        redirect_to = self.get_success_url()
+        if redirect_to != request.get_full_path():
+            # Redirect to target page once the session has been cleared.
+            return HttpResponseRedirect(redirect_to)
+        return super().get(request, *args, **kwargs)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Custom logout view that properly handles GET requests
+    path('accounts/logout/', CustomLogoutView.as_view(), name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('register.urls')),
 ]
