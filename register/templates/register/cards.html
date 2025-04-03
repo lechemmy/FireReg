@@ -33,10 +33,14 @@
                                 </thead>
                                 <tbody>
                                     {% for card in cards %}
-                                        <tr>
+                                        <tr{% if card.id in logged_in_cards %} class="text-muted"{% endif %}>
                                             <td>
                                                 <div class="form-check">
-                                                    <input class="form-check-input card-checkbox" type="checkbox" name="card_ids[]" value="{{ card.id }}" id="card-{{ card.id }}">
+                                                    {% if card.id not in logged_in_cards %}
+                                                        <input class="form-check-input card-checkbox" type="checkbox" name="card_ids[]" value="{{ card.id }}" id="card-{{ card.id }}">
+                                                    {% else %}
+                                                        <span class="badge bg-success">Logged In</span>
+                                                    {% endif %}
                                                 </div>
                                             </td>
                                             <td>{{ card.name }}</td>
@@ -130,14 +134,16 @@
 
         // Function to update the log in office button state
         function updateLogInOfficeButtonState() {
-            const anyChecked = Array.from(cardCheckboxes).some(checkbox => checkbox.checked);
+            const visibleCheckboxes = Array.from(cardCheckboxes).filter(cb => cb.offsetParent !== null);
+            const anyChecked = visibleCheckboxes.some(checkbox => checkbox.checked);
             logInOfficeButton.disabled = !anyChecked;
         }
 
         // Select all checkbox
         if (selectAllCardsCheckbox) {
             selectAllCardsCheckbox.addEventListener('change', function() {
-                cardCheckboxes.forEach(checkbox => {
+                const visibleCheckboxes = Array.from(cardCheckboxes).filter(cb => cb.offsetParent !== null);
+                visibleCheckboxes.forEach(checkbox => {
                     checkbox.checked = selectAllCardsCheckbox.checked;
                 });
                 updateLogInOfficeButtonState();
@@ -149,7 +155,9 @@
             checkbox.addEventListener('change', function() {
                 // Update "select all" checkbox
                 if (selectAllCardsCheckbox) {
-                    selectAllCardsCheckbox.checked = Array.from(cardCheckboxes).every(cb => cb.checked);
+                    const visibleCheckboxes = Array.from(cardCheckboxes).filter(cb => cb.offsetParent !== null);
+                    selectAllCardsCheckbox.checked = visibleCheckboxes.length > 0 && 
+                                                    visibleCheckboxes.every(cb => cb.checked);
                 }
                 updateLogInOfficeButtonState();
             });

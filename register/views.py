@@ -224,8 +224,25 @@ def cards(request):
     """View to display all registered cards."""
     all_cards = Card.objects.all().order_by('name')
 
+    # Get information about which cards are currently logged in
+    logged_in_cards = set()
+    for card in all_cards:
+        # Find a user with the card's name
+        username = card.name.lower().replace(' ', '_')
+        try:
+            user = User.objects.get(username=username)
+            # Check if the user has a StaffPresence record and is present
+            try:
+                if user.presence.is_present:
+                    logged_in_cards.add(card.id)
+            except StaffPresence.DoesNotExist:
+                pass
+        except User.DoesNotExist:
+            pass
+
     return render(request, 'register/cards.html', {
         'cards': all_cards,
+        'logged_in_cards': logged_in_cards,
     })
 
 @login_required
