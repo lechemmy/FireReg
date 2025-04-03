@@ -42,6 +42,7 @@ docker-compose.override.yml
 .env.development.local
 .env.test.local
 .env.production.local
+.env.docker
 
 # IDE
 .idea/
