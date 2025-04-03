@@ -10,10 +10,19 @@ services:
       - ./data:/app/data
       - sqlite_data:/app/db_data
     env_file:
-      - .env
+      - ./.env
     environment:
       - DEBUG=True
       - DB_PATH=/app/db_data/db.sqlite3
+      # Fallback environment variables in case .env is not found
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-(x!=q-r&rlsb%rs-q=d4c(6d&pdb$ry+v(pmjmv=3#4e3471u0}
+      - SUPERUSER_USERNAME=${SUPERUSER_USERNAME:-admin}
+      - SUPERUSER_EMAIL=${SUPERUSER_EMAIL:-admin@example.com}
+      - SUPERUSER_PASSWORD=${SUPERUSER_PASSWORD:-adminpassword}
+      - TEST_USER_USERNAME=${TEST_USER_USERNAME:-testuser}
+      - TEST_USER_EMAIL=${TEST_USER_EMAIL:-test@example.com}
+      - TEST_USER_PASSWORD=${TEST_USER_PASSWORD:-testpassword}
+      - API_KEY=${API_KEY:-your-api-key-here}
 
 volumes:
   sqlite_data:
