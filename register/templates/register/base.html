@@ -27,6 +27,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:index' %}">Home</a>
                     </li>
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:current_staff' %}">Current Staff</a>
                     </li>
@@ -46,6 +47,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:fire_marshals' %}">Fire Marshals</a>
                     </li>
+                    {% endif %}
                 </ul>
                 <div class="d-flex">
                     {% if user.is_authenticated %}
