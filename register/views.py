@@ -150,13 +150,15 @@ def rfid_scan(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-@login_required
 def current_staff(request):
     """View to display staff currently in the building."""
     present_staff = StaffPresence.objects.filter(is_present=True).select_related('user')
+    staff_count = present_staff.count()
 
     return render(request, 'register/current_staff.html', {
         'present_staff': present_staff,
+        'staff_count': staff_count,
+        'is_authenticated': request.user.is_authenticated,
     })
 
 @login_required

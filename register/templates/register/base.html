@@ -27,26 +27,26 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:index' %}">Home</a>
                     </li>
-                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'register:current_staff' %}">Current Staff</a>
                     </li>
-                    {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register:event_log' %}">Event Log</a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register:cards' %}">Cards</a>
-                    </li>
-                    {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register:api_keys' %}">API Keys</a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register:fire_marshals' %}">Fire Marshals</a>
-                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register:cards' %}">Cards</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register:fire_marshals' %}">Fire Marshals</a>
+                        </li>
+                        {% if not request.user.groups.all.0.name == 'Fire Marshal' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'register:api_keys' %}">API Keys</a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_superuser %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'register:event_log' %}">Event Log</a>
+                            </li>
+                        {% endif %}
                     {% endif %}
                 </ul>
                 <div class="d-flex">

@@ -7,10 +7,14 @@
     <div class="col-12">
         <div class="card shadow">
             <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">Staff Currently in the Building</h2>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Staff Currently in the Building</h2>
+                    <span class="badge bg-light text-primary fs-5">Total: {{ staff_count }}</span>
+                </div>
             </div>
             <div class="card-body">
                 {% if present_staff %}
+                    {% if is_authenticated %}
                     <form id="exit-staff-form" method="post" action="{% url 'register:exit_staff' %}">
                         {% csrf_token %}
                         <div class="table-responsive">
@@ -24,7 +28,6 @@
                                             </div>
                                         </th>
                                         <th>Name</th>
-                                        <th>Username</th>
                                         <th>Last Entry</th>
                                     </tr>
                                 </thead>
@@ -37,7 +40,6 @@
                                                 </div>
                                             </td>
                                             <td>{{ presence.user.get_full_name|default:presence.user.username }}</td>
-                                            <td>{{ presence.user.username }}</td>
                                             <td>{{ presence.last_entry|date:"F j, Y, g:i a" }}</td>
                                         </tr>
                                     {% endfor %}
@@ -50,6 +52,26 @@
                             </button>
                         </div>
                     </form>
+                    {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Last Entry</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for presence in present_staff %}
+                                    <tr>
+                                        <td>{{ presence.user.get_full_name|default:presence.user.username }}</td>
+                                        <td>{{ presence.last_entry|date:"F j, Y, g:i a" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
                 {% else %}
                     <div class="alert alert-info">
                         <p class="mb-0">There are currently no staff members in the building.</p>
@@ -67,6 +89,7 @@
     </div>
 </div>
 
+{% if is_authenticated %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const selectAllCheckbox = document.getElementById('select-all');
@@ -99,4 +122,5 @@
         });
     });
 </script>
+{% endif %}
 {% endblock %}
