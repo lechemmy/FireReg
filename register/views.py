@@ -242,9 +242,13 @@ def cards(request):
         except User.DoesNotExist:
             pass
 
+    # Check if user is a Fire Marshal
+    is_fire_marshal = request.user.groups.filter(name='Fire Marshal').exists()
+
     return render(request, 'register/cards.html', {
         'cards': all_cards,
         'logged_in_cards': logged_in_cards,
+        'is_fire_marshal': is_fire_marshal,
     })
 
 @login_required
@@ -409,6 +413,10 @@ def export_cards(request):
 @require_POST
 def import_cards(request):
     """View to import cards from a CSV file, ignoring duplicates."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have permission to import cards.')
+        return redirect('register:cards')
     if 'csv_file' not in request.FILES:
         messages.error(request, 'No CSV file was uploaded.')
         return redirect('register:cards')
@@ -475,6 +483,10 @@ def import_cards(request):
 @require_POST
 def register_cards(request):
     """View to handle registration of new cards."""
+    # Check if user is a Fire Marshal
+    if request.user.groups.filter(name='Fire Marshal').exists():
+        messages.error(request, 'Fire Marshals do not have permission to register new cards.')
+        return redirect('register:cards')
     names = request.POST.getlist('name[]')
     card_numbers = request.POST.getlist('card_number[]')
 

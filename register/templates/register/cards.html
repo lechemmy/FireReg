@@ -68,6 +68,7 @@
             </div>
         </div>
 
+        {% if not is_fire_marshal %}
         <div class="card shadow">
             <div class="card-header bg-success text-white">
                 <h2 class="mb-0">Register New Cards</h2>
@@ -118,6 +119,7 @@
                 </form>
             </div>
         </div>
+        {% endif %}
 
         <div class="mt-4">
             <a href="{% url 'register:index' %}" class="btn btn-secondary">Back to Home</a>
