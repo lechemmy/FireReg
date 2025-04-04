@@ -8,6 +8,7 @@ A web application for tracking staff entering and exiting a building using RFID 
 - View a list of staff currently in the building
 - View logs of entry and exit events
 - API endpoint for RFID tag readers to register entry/exit events
+- Automatic exit of all cards at 23:00 daily
 - Dark and light theme support
 
 ## Requirements
@@ -191,6 +192,40 @@ def register_event(tag_id, event_type=None, api_key=None):
 # To let the system auto-detect event type:
 # register_event("TAG123", api_key="your-api-key-here")
 ```
+
+## Automatic Card Exit
+
+The system includes a feature to automatically exit all cards at 23:00 (11:00 PM) every day. This ensures that all staff members are properly logged out at the end of the day, even if they forget to manually log out.
+
+### How It Works
+
+The automatic exit feature is implemented as a Django management command that can be scheduled to run at 23:00 daily using a cron job or similar scheduler.
+
+### Manual Execution
+
+To manually exit all cards that are currently logged in:
+
+```
+python manage.py exit_all_cards
+```
+
+### Scheduling
+
+To schedule the command to run automatically at 23:00 daily, set up a cron job:
+
+1. Open your crontab file:
+   ```
+   crontab -e
+   ```
+
+2. Add the following line to schedule the command to run at 23:00 daily:
+   ```
+   0 23 * * * cd /path/to/your/project && /path/to/your/python /path/to/your/project/manage.py exit_all_cards
+   ```
+
+   Replace `/path/to/your/project` with the actual path to your Django project, and `/path/to/your/python` with the path to your Python executable.
+
+For more detailed instructions, see the README.md file in the `register/management/commands/` directory.
 
 ## Testing
 
