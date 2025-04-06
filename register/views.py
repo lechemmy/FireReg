@@ -211,10 +211,38 @@ def event_log(request):
         messages.error(request, 'Fire Marshals do not have access to the Event Log.')
         return redirect('register:index')
 
-    logs = EntryExitLog.objects.all().select_related('user')[:100]  # Limit to last 100 events
+    # Get filter parameters from request
+    name_filter = request.GET.get('name', '')
+    date_filter = request.GET.get('date', '')
+
+    # Start with all logs
+    logs = EntryExitLog.objects.all().select_related('user')
+
+    # Apply filters if provided
+    if name_filter:
+        logs = logs.filter(user__first_name__icontains=name_filter) | \
+               logs.filter(user__last_name__icontains=name_filter) | \
+               logs.filter(user__username__icontains=name_filter)
+
+    if date_filter:
+        try:
+            # Filter by the specific date
+            date_obj = timezone.datetime.strptime(date_filter, '%Y-%m-%d').date()
+            logs = logs.filter(timestamp__date=date_obj)
+        except ValueError:
+            # If date parsing fails, ignore the date filter
+            pass
+
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 100)  # Show 100 logs per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'register/event_log.html', {
-        'logs': logs,
+        'logs': page_obj,
+        'name_filter': name_filter,
+        'date_filter': date_filter,
     })
 
 def index(request):
