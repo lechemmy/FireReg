@@ -161,13 +161,39 @@ def rfid_scan(request):
 
 def current_staff(request):
     """View to display staff currently in the building."""
+    # Get sort parameters from request
+    sort_by = request.GET.get('sort', 'last_entry')  # Default sort by last_entry
+    sort_dir = request.GET.get('dir', 'asc')   # Default ascending order
+
+    # Get staff presence data
     present_staff = StaffPresence.objects.filter(is_present=True).select_related('user')
-    staff_count = present_staff.count()
+
+    # Apply sorting
+    if sort_by == 'name':
+        # Sort by user's full name or username
+        if sort_dir == 'desc':
+            # Django can't directly sort by a property or method, so we'll sort in Python
+            present_staff = sorted(present_staff, 
+                                  key=lambda p: p.user.get_full_name() or p.user.username, 
+                                  reverse=True)
+        else:
+            present_staff = sorted(present_staff, 
+                                  key=lambda p: p.user.get_full_name() or p.user.username)
+    elif sort_by == 'last_entry':
+        # Sort by last entry timestamp
+        if sort_dir == 'desc':
+            present_staff = present_staff.order_by('-last_entry')
+        else:
+            present_staff = present_staff.order_by('last_entry')
+
+    staff_count = len(present_staff) if isinstance(present_staff, list) else present_staff.count()
 
     return render(request, 'register/current_staff.html', {
         'present_staff': present_staff,
         'staff_count': staff_count,
         'is_authenticated': request.user.is_authenticated,
+        'sort_by': sort_by,
+        'sort_dir': sort_dir,
     })
 
 @login_required

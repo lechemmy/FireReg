@@ -27,8 +27,30 @@
                                                 <label class="form-check-label" for="select-all">Select All</label>
                                             </div>
                                         </th>
-                                        <th>Name</th>
-                                        <th>Last Entry</th>
+                                        <th>
+                                            <a href="?sort=name&dir={% if sort_by == 'name' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                                Name
+                                                {% if sort_by == 'name' %}
+                                                    {% if sort_dir == 'asc' %}
+                                                        <i class="bi bi-sort-alpha-down"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-sort-alpha-up"></i>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort=last_entry&dir={% if sort_by == 'last_entry' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                                Last Entry
+                                                {% if sort_by == 'last_entry' %}
+                                                    {% if sort_dir == 'asc' %}
+                                                        <i class="bi bi-sort-down"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-sort-up"></i>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </a>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -57,8 +79,30 @@
                         <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Last Entry</th>
+                                    <th>
+                                        <a href="?sort=name&dir={% if sort_by == 'name' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                            Name
+                                            {% if sort_by == 'name' %}
+                                                {% if sort_dir == 'asc' %}
+                                                    <i class="bi bi-sort-alpha-down"></i>
+                                                {% else %}
+                                                    <i class="bi bi-sort-alpha-up"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
+                                    <th>
+                                        <a href="?sort=last_entry&dir={% if sort_by == 'last_entry' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
+                                            Last Entry
+                                            {% if sort_by == 'last_entry' %}
+                                                {% if sort_dir == 'asc' %}
+                                                    <i class="bi bi-sort-down"></i>
+                                                {% else %}
+                                                    <i class="bi bi-sort-up"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                        </a>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
