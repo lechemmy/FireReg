@@ -14,7 +14,16 @@ import json
 import csv
 import io
 
-# Custom forms for Fire Marshal management
+# Custom forms for Fire Marshal and Card management
+class CardForm(forms.ModelForm):
+    """Form for editing cards."""
+    class Meta:
+        model = Card
+        fields = ['name', 'card_number']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'card_number': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 class FireMarshalForm(forms.ModelForm):
     """Form for creating and editing Fire Marshals."""
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput, required=False)
@@ -642,3 +651,44 @@ def delete_fire_marshal(request, user_id):
 
     messages.success(request, f'{user.username} removed from Fire Marshals.')
     return redirect('register:fire_marshals')
+
+@login_required
+def edit_card(request, card_id):
+    """View to edit an existing card."""
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superusers have permission to edit cards.')
+        return redirect('register:cards')
+
+    card = get_object_or_404(Card, id=card_id)
+
+    if request.method == 'POST':
+        form = CardForm(request.POST, instance=card)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Card updated successfully.')
+            return redirect('register:cards')
+    else:
+        form = CardForm(instance=card)
+
+    return render(request, 'register/card_form.html', {
+        'form': form,
+        'title': 'Edit Card',
+        'card': card,
+    })
+
+@login_required
+@require_POST
+def delete_card(request, card_id):
+    """View to delete a card."""
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superusers have permission to delete cards.')
+        return redirect('register:cards')
+
+    card = get_object_or_404(Card, id=card_id)
+    card_name = card.name
+    card.delete()
+
+    messages.success(request, f'Card "{card_name}" deleted successfully.')
+    return redirect('register:cards')

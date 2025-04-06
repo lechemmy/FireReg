@@ -29,6 +29,9 @@
                                         <th>Name</th>
                                         <th>Card Number</th>
                                         <th>Created At</th>
+                                        {% if user.is_superuser %}
+                                        <th>Actions</th>
+                                        {% endif %}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -46,6 +49,40 @@
                                             <td>{{ card.name }}</td>
                                             <td>{{ card.card_number }}</td>
                                             <td>{{ card.created_at|date:"F j, Y, g:i a" }}</td>
+                                            {% if user.is_superuser %}
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{% url 'register:edit_card' card.id %}" class="btn btn-primary">
+                                                        <i class="bi bi-pencil"></i> Edit
+                                                    </a>
+                                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCardModal{{ card.id }}">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </button>
+                                                </div>
+
+                                                <!-- Delete Confirmation Modal -->
+                                                <div class="modal fade" id="deleteCardModal{{ card.id }}" tabindex="-1" aria-labelledby="deleteCardModalLabel{{ card.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="deleteCardModalLabel{{ card.id }}">Confirm Delete</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                Are you sure you want to delete the card for <strong>{{ card.name }}</strong>?
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <form method="post" action="{% url 'register:delete_card' card.id %}" style="display: inline;">
+                                                                    {% csrf_token %}
+                                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            {% endif %}
                                         </tr>
                                     {% endfor %}
                                 </tbody>
