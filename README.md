@@ -229,7 +229,25 @@ For more detailed instructions, see the README.md file in the `register/manageme
 
 ## Testing
 
-A test script is provided to simulate RFID tag scans:
+### Automated Tests
+
+The project includes a comprehensive test suite that covers models, views, forms, API endpoints, and management commands. To run the tests:
+
+```
+python manage.py test register
+```
+
+The test suite includes:
+
+1. **Model Tests**: Tests for all models (RFIDTag, EntryExitLog, StaffPresence, Card, APIKey)
+2. **View Tests**: Tests for all views including access restrictions
+3. **API Tests**: Tests for the RFID scan API and search APIs
+4. **Management Command Tests**: Tests for the exit_all_cards command
+5. **Form Tests**: Tests for the card and fire marshal forms
+
+### Manual API Testing
+
+A test script is also provided to manually simulate RFID tag scans:
 
 ```
 python test_api.py
