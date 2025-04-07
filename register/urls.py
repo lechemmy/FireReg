@@ -25,4 +25,8 @@ urlpatterns = [
     path('fire-marshals/add/', views.add_fire_marshal, name='add_fire_marshal'),
     path('fire-marshals/edit/<int:user_id>/', views.edit_fire_marshal, name='edit_fire_marshal'),
     path('fire-marshals/delete/<int:user_id>/', views.delete_fire_marshal, name='delete_fire_marshal'),
+
+    # Search API endpoints
+    path('api/search-staff/', views.search_staff, name='search_staff'),
+    path('api/search-cards/', views.search_cards, name='search_cards'),
 ]

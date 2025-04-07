@@ -285,6 +285,70 @@ def index(request):
     return render(request, 'register/index.html')
 
 @login_required
+def search_staff(request):
+    """API endpoint to search staff by name."""
+    query = request.GET.get('q', '').strip()
+
+    if not query:
+        return JsonResponse({'staff': []})
+
+    # Get staff presence data for staff who are present
+    present_staff = StaffPresence.objects.filter(is_present=True).select_related('user')
+
+    # Filter by name
+    filtered_staff = []
+    for presence in present_staff:
+        full_name = presence.user.get_full_name() or presence.user.username
+        if query.lower() in full_name.lower():
+            filtered_staff.append({
+                'id': presence.user.id,
+                'name': full_name,
+                'last_entry': presence.last_entry.isoformat() if presence.last_entry else None
+            })
+
+    return JsonResponse({'staff': filtered_staff})
+
+@login_required
+def search_cards(request):
+    """API endpoint to search cards by name."""
+    query = request.GET.get('q', '').strip()
+
+    if not query:
+        return JsonResponse({'cards': []})
+
+    # Get all cards
+    all_cards = Card.objects.filter(name__icontains=query).order_by('name')
+
+    # Get information about which cards are currently logged in
+    logged_in_cards = set()
+    for card in all_cards:
+        # Find a user with the card's name
+        username = card.name.lower().replace(' ', '_')
+        try:
+            user = User.objects.get(username=username)
+            # Check if the user has a StaffPresence record and is present
+            try:
+                if user.presence.is_present:
+                    logged_in_cards.add(card.id)
+            except StaffPresence.DoesNotExist:
+                pass
+        except User.DoesNotExist:
+            pass
+
+    # Format the response
+    cards_data = []
+    for card in all_cards:
+        cards_data.append({
+            'id': card.id,
+            'name': card.name,
+            'card_number': card.card_number,
+            'created_at': card.created_at.isoformat() if card.created_at else None,
+            'is_logged_in': card.id in logged_in_cards
+        })
+
+    return JsonResponse({'cards': cards_data})
+
+@login_required
 def cards(request):
     """View to display all registered cards."""
     all_cards = Card.objects.all().order_by('name')

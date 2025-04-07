@@ -13,6 +13,14 @@
                 </a>
             </div>
             <div class="card-body">
+                <!-- Search input -->
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="card-search" class="form-control" placeholder="Search by name..." aria-label="Search by name">
+                    </div>
+                </div>
+
                 {% if cards %}
                     <form id="log-cards-form" method="post" action="{% url 'register:log_cards_in_office' %}">
                         {% csrf_token %}
@@ -247,6 +255,168 @@
                 }
             }
         });
+
+        // Live search functionality
+        const searchInput = document.getElementById('card-search');
+        if (searchInput) {
+            let debounceTimer;
+            const debounceDelay = 300; // milliseconds
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function() {
+                    const query = searchInput.value.trim();
+
+                    if (query.length === 0) {
+                        // If search is empty, reload the page to show all cards
+                        window.location.href = "{% url 'register:cards' %}";
+                        return;
+                    }
+
+                    // Make AJAX request to search API
+                    fetch(`{% url 'register:search_cards' %}?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            updateCardsTable(data.cards);
+                        })
+                        .catch(error => {
+                            console.error('Error searching cards:', error);
+                        });
+                }, debounceDelay);
+            });
+
+            function updateCardsTable(cardsList) {
+                const tableBody = document.querySelector('tbody');
+                if (!tableBody) return;
+
+                // Clear the table
+                tableBody.innerHTML = '';
+
+                if (cardsList.length === 0) {
+                    // No results
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = document.querySelectorAll('thead th').length;
+                    cell.textContent = 'No cards found matching your search.';
+                    cell.className = 'text-center';
+                    row.appendChild(cell);
+                    tableBody.appendChild(row);
+                    return;
+                }
+
+                // Add rows for each card
+                cardsList.forEach(card => {
+                    const row = document.createElement('tr');
+                    if (card.is_logged_in) {
+                        row.className = 'text-muted';
+                    }
+
+                    // Checkbox cell
+                    const checkboxCell = document.createElement('td');
+                    const checkboxDiv = document.createElement('div');
+                    checkboxDiv.className = 'form-check';
+
+                    if (!card.is_logged_in) {
+                        const checkbox = document.createElement('input');
+                        checkbox.className = 'form-check-input card-checkbox';
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'card_ids[]';
+                        checkbox.value = card.id;
+                        checkbox.id = `card-${card.id}`;
+                        checkboxDiv.appendChild(checkbox);
+                    } else {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-success';
+                        badge.textContent = 'Logged In';
+                        checkboxDiv.appendChild(badge);
+                    }
+
+                    checkboxCell.appendChild(checkboxDiv);
+                    row.appendChild(checkboxCell);
+
+                    // Name cell
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = card.name;
+                    row.appendChild(nameCell);
+
+                    // Card number cell
+                    const cardNumberCell = document.createElement('td');
+                    cardNumberCell.textContent = card.card_number;
+                    row.appendChild(cardNumberCell);
+
+                    // Created at cell
+                    const createdAtCell = document.createElement('td');
+                    if (card.created_at) {
+                        const date = new Date(card.created_at);
+                        createdAtCell.textContent = date.toLocaleString();
+                    } else {
+                        createdAtCell.textContent = 'N/A';
+                    }
+                    row.appendChild(createdAtCell);
+
+                    // Actions cell (for superusers)
+                    {% if user.is_superuser %}
+                    const actionsCell = document.createElement('td');
+                    const btnGroup = document.createElement('div');
+                    btnGroup.className = 'btn-group btn-group-sm';
+
+                    const editBtn = document.createElement('a');
+                    editBtn.href = `/register/cards/edit/${card.id}/`;
+                    editBtn.className = 'btn btn-primary';
+                    editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
+                    btnGroup.appendChild(editBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.className = 'btn btn-danger';
+                    deleteBtn.setAttribute('data-bs-toggle', 'modal');
+                    deleteBtn.setAttribute('data-bs-target', `#deleteCardModal${card.id}`);
+                    deleteBtn.innerHTML = '<i class="bi bi-trash"></i> Delete';
+                    btnGroup.appendChild(deleteBtn);
+
+                    actionsCell.appendChild(btnGroup);
+                    row.appendChild(actionsCell);
+                    {% endif %}
+
+                    tableBody.appendChild(row);
+                });
+
+                // Reattach event listeners to checkboxes
+                const selectAllCardsCheckbox = document.getElementById('select-all-cards');
+                const cardCheckboxes = document.querySelectorAll('.card-checkbox');
+                const logInOfficeButton = document.getElementById('log-in-office-button');
+
+                function updateLogInOfficeButtonState() {
+                    const visibleCheckboxes = Array.from(cardCheckboxes).filter(cb => cb.offsetParent !== null);
+                    const anyChecked = visibleCheckboxes.some(checkbox => checkbox.checked);
+                    logInOfficeButton.disabled = !anyChecked;
+                }
+
+                if (selectAllCardsCheckbox) {
+                    selectAllCardsCheckbox.checked = false;
+                    selectAllCardsCheckbox.addEventListener('change', function() {
+                        const visibleCheckboxes = Array.from(cardCheckboxes).filter(cb => cb.offsetParent !== null);
+                        visibleCheckboxes.forEach(checkbox => {
+                            checkbox.checked = selectAllCardsCheckbox.checked;
+                        });
+                        updateLogInOfficeButtonState();
+                    });
+                }
+
+                cardCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        if (selectAllCardsCheckbox) {
+                            const visibleCheckboxes = Array.from(cardCheckboxes).filter(cb => cb.offsetParent !== null);
+                            selectAllCardsCheckbox.checked = visibleCheckboxes.length > 0 && 
+                                                          visibleCheckboxes.every(cb => cb.checked);
+                        }
+                        updateLogInOfficeButtonState();
+                    });
+                });
+
+                updateLogInOfficeButtonState();
+            }
+        }
     });
 </script>
 {% endblock %}

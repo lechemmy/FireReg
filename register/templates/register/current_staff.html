@@ -13,6 +13,14 @@
                 </div>
             </div>
             <div class="card-body">
+                <!-- Search input -->
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="staff-search" class="form-control" placeholder="Search by name..." aria-label="Search by name">
+                    </div>
+                </div>
+
                 {% if present_staff %}
                     {% if is_authenticated %}
                     <form id="exit-staff-form" method="post" action="{% url 'register:exit_staff' %}">
@@ -167,4 +175,138 @@
     });
 </script>
 {% endif %}
+
+<!-- Live search script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('staff-search');
+        if (!searchInput) return;
+
+        let debounceTimer;
+        const debounceDelay = 300; // milliseconds
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                const query = searchInput.value.trim();
+
+                if (query.length === 0) {
+                    // If search is empty, reload the page to show all staff
+                    window.location.href = "{% url 'register:current_staff' %}";
+                    return;
+                }
+
+                // Make AJAX request to search API
+                fetch(`{% url 'register:search_staff' %}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateStaffTable(data.staff);
+                    })
+                    .catch(error => {
+                        console.error('Error searching staff:', error);
+                    });
+            }, debounceDelay);
+        });
+
+        function updateStaffTable(staffList) {
+            const tableBody = document.querySelector('tbody');
+            if (!tableBody) return;
+
+            // Clear the table
+            tableBody.innerHTML = '';
+
+            if (staffList.length === 0) {
+                // No results
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = document.querySelectorAll('thead th').length;
+                cell.textContent = 'No staff found matching your search.';
+                cell.className = 'text-center';
+                row.appendChild(cell);
+                tableBody.appendChild(row);
+
+                // Update the count
+                const countBadge = document.querySelector('.badge.bg-light.text-primary');
+                if (countBadge) countBadge.textContent = 'Total: 0';
+
+                return;
+            }
+
+            // Update the count
+            const countBadge = document.querySelector('.badge.bg-light.text-primary');
+            if (countBadge) countBadge.textContent = `Total: ${staffList.length}`;
+
+            // Add rows for each staff member
+            staffList.forEach(staff => {
+                const row = document.createElement('tr');
+
+                {% if is_authenticated %}
+                // Checkbox cell
+                const checkboxCell = document.createElement('td');
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'form-check';
+
+                const checkbox = document.createElement('input');
+                checkbox.className = 'form-check-input staff-checkbox';
+                checkbox.type = 'checkbox';
+                checkbox.name = 'user_ids[]';
+                checkbox.value = staff.id;
+                checkbox.id = `user-${staff.id}`;
+
+                checkboxDiv.appendChild(checkbox);
+                checkboxCell.appendChild(checkboxDiv);
+                row.appendChild(checkboxCell);
+                {% endif %}
+
+                // Name cell
+                const nameCell = document.createElement('td');
+                nameCell.textContent = staff.name;
+                row.appendChild(nameCell);
+
+                // Last entry cell
+                const lastEntryCell = document.createElement('td');
+                if (staff.last_entry) {
+                    const date = new Date(staff.last_entry);
+                    lastEntryCell.textContent = date.toLocaleString();
+                } else {
+                    lastEntryCell.textContent = 'N/A';
+                }
+                row.appendChild(lastEntryCell);
+
+                tableBody.appendChild(row);
+            });
+
+            // Reattach event listeners to checkboxes
+            {% if is_authenticated %}
+            const selectAllCheckbox = document.getElementById('select-all');
+            const staffCheckboxes = document.querySelectorAll('.staff-checkbox');
+            const exitButton = document.getElementById('exit-button');
+
+            function updateExitButtonState() {
+                const anyChecked = Array.from(staffCheckboxes).some(checkbox => checkbox.checked);
+                exitButton.disabled = !anyChecked;
+            }
+
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.addEventListener('change', function() {
+                    staffCheckboxes.forEach(checkbox => {
+                        checkbox.checked = selectAllCheckbox.checked;
+                    });
+                    updateExitButtonState();
+                });
+            }
+
+            staffCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    selectAllCheckbox.checked = Array.from(staffCheckboxes).every(cb => cb.checked);
+                    updateExitButtonState();
+                });
+            });
+
+            updateExitButtonState();
+            {% endif %}
+        }
+    });
+</script>
 {% endblock %}
