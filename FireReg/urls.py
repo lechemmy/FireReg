@@ -16,9 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.auth.views import LogoutView
+from django.contrib.auth.views import LogoutView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 from django.contrib.auth import logout as auth_logout
 from django.http import HttpResponseRedirect
+from register.password_reset import RestrictedPasswordResetView
 
 class CustomLogoutView(LogoutView):
     """
@@ -39,6 +40,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # Custom logout view that properly handles GET requests
     path('accounts/logout/', CustomLogoutView.as_view(), name='logout'),
+    # Custom password reset views
+    path('accounts/password_reset/', RestrictedPasswordResetView.as_view(), name='password_reset'),
+    path('accounts/password_reset/done/', PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('accounts/reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('accounts/reset/done/', PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    # Other auth URLs
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('register.urls')),
 ]
