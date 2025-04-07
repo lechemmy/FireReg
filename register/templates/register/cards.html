@@ -18,6 +18,9 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
                         <input type="text" id="card-search" class="form-control" placeholder="Search by name..." aria-label="Search by name">
+                        <button class="btn btn-outline-secondary clear-search-btn" type="button" id="clear-card-search" style="display: none;">
+                            <i class="bi bi-x"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -262,8 +265,28 @@
             let debounceTimer;
             const debounceDelay = 300; // milliseconds
 
+            // Show/hide clear button based on search input
+            const clearButton = document.getElementById('clear-card-search');
+
+            // Function to toggle clear button visibility
+            function toggleClearButton() {
+                if (searchInput.value.trim().length > 0) {
+                    clearButton.style.display = 'block';
+                } else {
+                    clearButton.style.display = 'none';
+                }
+            }
+
+            // Clear search when button is clicked
+            clearButton.addEventListener('click', function() {
+                searchInput.value = '';
+                toggleClearButton();
+                window.location.href = "{% url 'register:cards' %}";
+            });
+
             searchInput.addEventListener('input', function() {
                 clearTimeout(debounceTimer);
+                toggleClearButton();
                 debounceTimer = setTimeout(function() {
                     const query = searchInput.value.trim();
 
