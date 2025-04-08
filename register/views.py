@@ -312,12 +312,24 @@ def search_staff(request):
 def search_cards(request):
     """API endpoint to search cards by name."""
     query = request.GET.get('q', '').strip()
+    sort_param = request.GET.get('sort', 'name')
 
     if not query:
         return JsonResponse({'cards': []})
 
-    # Get all cards
-    all_cards = Card.objects.filter(name__icontains=query).order_by('name')
+    # Check if sort direction is specified (- prefix means descending)
+    if sort_param.startswith('-'):
+        sort_field = sort_param[1:]  # Remove the - prefix
+    else:
+        sort_field = sort_param
+
+    # Validate sort parameter
+    valid_sort_fields = ['name', 'card_number', 'created_at']
+    if sort_field not in valid_sort_fields:
+        sort_param = 'name'
+
+    # Get all cards with sorting applied
+    all_cards = Card.objects.filter(name__icontains=query).order_by(sort_param)
 
     # Get information about which cards are currently logged in
     logged_in_cards = set()
@@ -351,7 +363,26 @@ def search_cards(request):
 @login_required
 def cards(request):
     """View to display all registered cards."""
-    all_cards = Card.objects.all().order_by('name')
+    # Get sort parameter from request, default to 'name'
+    sort_param = request.GET.get('sort', 'name')
+
+    # Check if sort direction is specified (- prefix means descending)
+    if sort_param.startswith('-'):
+        sort_direction = 'desc'
+        sort_field = sort_param[1:]  # Remove the - prefix
+    else:
+        sort_direction = 'asc'
+        sort_field = sort_param
+
+    # Validate sort parameter
+    valid_sort_fields = ['name', 'card_number', 'created_at']
+    if sort_field not in valid_sort_fields:
+        sort_field = 'name'
+        sort_direction = 'asc'
+
+    # Apply sorting
+    order_param = f"-{sort_field}" if sort_direction == 'desc' else sort_field
+    all_cards = Card.objects.all().order_by(order_param)
 
     # Get information about which cards are currently logged in
     logged_in_cards = set()
@@ -376,6 +407,8 @@ def cards(request):
         'cards': all_cards,
         'logged_in_cards': logged_in_cards,
         'is_fire_marshal': is_fire_marshal,
+        'sort_field': sort_field,
+        'sort_direction': sort_direction,
     })
 
 @login_required

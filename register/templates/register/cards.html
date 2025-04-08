@@ -37,9 +37,42 @@
                                                 <label class="form-check-label" for="select-all-cards">Select All</label>
                                             </div>
                                         </th>
-                                        <th>Name</th>
-                                        <th>Card Number</th>
-                                        <th>Created At</th>
+                                        <th>
+                                            <a href="?sort={% if sort_field == 'name' and sort_direction == 'asc' %}-{% endif %}name" class="text-decoration-none">
+                                                Name
+                                                {% if sort_field == 'name' %}
+                                                    {% if sort_direction == 'asc' %}
+                                                    <i class="bi bi-arrow-up-short"></i>
+                                                    {% else %}
+                                                    <i class="bi bi-arrow-down-short"></i>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort={% if sort_field == 'card_number' and sort_direction == 'asc' %}-{% endif %}card_number" class="text-decoration-none">
+                                                Card Number
+                                                {% if sort_field == 'card_number' %}
+                                                    {% if sort_direction == 'asc' %}
+                                                    <i class="bi bi-arrow-up-short"></i>
+                                                    {% else %}
+                                                    <i class="bi bi-arrow-down-short"></i>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort={% if sort_field == 'created_at' and sort_direction == 'asc' %}-{% endif %}created_at" class="text-decoration-none">
+                                                Created At
+                                                {% if sort_field == 'created_at' %}
+                                                    {% if sort_direction == 'asc' %}
+                                                    <i class="bi bi-arrow-up-short"></i>
+                                                    {% else %}
+                                                    <i class="bi bi-arrow-down-short"></i>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </a>
+                                        </th>
                                         {% if user.is_superuser %}
                                         <th>Actions</th>
                                         {% endif %}
@@ -281,7 +314,10 @@
             clearButton.addEventListener('click', function() {
                 searchInput.value = '';
                 toggleClearButton();
-                window.location.href = "{% url 'register:cards' %}";
+                const sortParam = '{{ sort_field }}';
+                const sortDirection = '{{ sort_direction }}';
+                const sortQuery = sortDirection === 'desc' ? `-${sortParam}` : sortParam;
+                window.location.href = `{% url 'register:cards' %}?sort=${sortQuery}`;
             });
 
             searchInput.addEventListener('input', function() {
@@ -292,12 +328,18 @@
 
                     if (query.length === 0) {
                         // If search is empty, reload the page to show all cards
-                        window.location.href = "{% url 'register:cards' %}";
+                        const sortParam = '{{ sort_field }}';
+                        const sortDirection = '{{ sort_direction }}';
+                        const sortQuery = sortDirection === 'desc' ? `-${sortParam}` : sortParam;
+                        window.location.href = `{% url 'register:cards' %}?sort=${sortQuery}`;
                         return;
                     }
 
                     // Make AJAX request to search API
-                    fetch(`{% url 'register:search_cards' %}?q=${encodeURIComponent(query)}`)
+                    const sortParam = '{{ sort_field }}';
+                    const sortDirection = '{{ sort_direction }}';
+                    const sortQuery = sortDirection === 'desc' ? `-${sortParam}` : sortParam;
+                    fetch(`{% url 'register:search_cards' %}?q=${encodeURIComponent(query)}&sort=${sortQuery}`)
                         .then(response => response.json())
                         .then(data => {
                             updateCardsTable(data.cards);
