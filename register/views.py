@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
+from django.db import transaction, models
 from django.contrib import messages
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm, SetPasswordForm
@@ -52,6 +52,55 @@ class FireMarshalForm(forms.ModelForm):
             # Ensure user is in Fire Marshal group
             fire_marshal_group, _ = Group.objects.get_or_create(name='Fire Marshal')
             fire_marshal_group.user_set.add(user)
+        return user
+
+class UserForm(forms.ModelForm):
+    """Form for creating and editing Users."""
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=False)
+    password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}), required=False)
+    is_fire_marshal = forms.BooleanField(label='Fire Marshal', required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'is_active', 'is_staff', 'is_superuser']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_superuser': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Check if the user is a Fire Marshal
+        if self.instance.pk:
+            self.fields['is_fire_marshal'].initial = self.instance.groups.filter(name='Fire Marshal').exists()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        if password1 or password2:
+            if password1 != password2:
+                raise forms.ValidationError("Passwords don't match")
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if self.cleaned_data.get('password1'):
+            user.set_password(self.cleaned_data['password1'])
+        if commit:
+            user.save()
+            # Handle Fire Marshal group
+            fire_marshal_group, _ = Group.objects.get_or_create(name='Fire Marshal')
+            if self.cleaned_data.get('is_fire_marshal'):
+                fire_marshal_group.user_set.add(user)
+            else:
+                fire_marshal_group.user_set.remove(user)
         return user
 
 @csrf_exempt
@@ -815,3 +864,122 @@ def delete_card(request, card_id):
 
     messages.success(request, f'Card "{card_name}" deleted successfully.')
     return redirect('register:cards')
+
+@login_required
+def users(request):
+    """View to display and manage all users."""
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superusers have permission to manage users.')
+        return redirect('register:index')
+
+    # Get sort parameters from request
+    sort_by = request.GET.get('sort', 'username')  # Default sort by username
+    sort_dir = request.GET.get('dir', 'asc')   # Default ascending order
+    search_query = request.GET.get('q', '')  # Search query
+
+    # Start with all users
+    all_users = User.objects.all()
+
+    # Apply search if provided
+    if search_query:
+        all_users = all_users.filter(
+            models.Q(username__icontains=search_query) |
+            models.Q(first_name__icontains=search_query) |
+            models.Q(last_name__icontains=search_query) |
+            models.Q(email__icontains=search_query)
+        )
+
+    # Apply sorting
+    if sort_by == 'name':
+        # Sort by user's full name
+        if sort_dir == 'desc':
+            all_users = sorted(all_users, key=lambda u: u.get_full_name() or u.username, reverse=True)
+        else:
+            all_users = sorted(all_users, key=lambda u: u.get_full_name() or u.username)
+    elif sort_by == 'fire_marshal':
+        # Sort by Fire Marshal status
+        fire_marshal_group = Group.objects.get(name='Fire Marshal')
+        if sort_dir == 'desc':
+            all_users = sorted(all_users, key=lambda u: u.groups.filter(id=fire_marshal_group.id).exists(), reverse=True)
+        else:
+            all_users = sorted(all_users, key=lambda u: u.groups.filter(id=fire_marshal_group.id).exists())
+    else:
+        # Sort by other fields using database
+        order_field = f"-{sort_by}" if sort_dir == 'desc' else sort_by
+        all_users = all_users.order_by(order_field)
+
+    return render(request, 'register/users.html', {
+        'users': all_users,
+        'sort_by': sort_by,
+        'sort_dir': sort_dir,
+        'search_query': search_query,
+    })
+
+@login_required
+def add_user(request):
+    """View to add a new user."""
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superusers have permission to add users.')
+        return redirect('register:users')
+
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'User added successfully.')
+            return redirect('register:users')
+    else:
+        form = UserForm()
+
+    return render(request, 'register/user_form.html', {
+        'form': form,
+        'title': 'Add User',
+    })
+
+@login_required
+def edit_user(request, user_id):
+    """View to edit an existing user."""
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superusers have permission to edit users.')
+        return redirect('register:users')
+
+    user = get_object_or_404(User, id=user_id)
+
+    if request.method == 'POST':
+        form = UserForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'User updated successfully.')
+            return redirect('register:users')
+    else:
+        form = UserForm(instance=user)
+
+    return render(request, 'register/user_form.html', {
+        'form': form,
+        'title': 'Edit User',
+        'user': user,
+    })
+
+@login_required
+@require_POST
+def delete_user(request, user_id):
+    """View to delete a user."""
+    # Check if user is a superuser
+    if not request.user.is_superuser:
+        messages.error(request, 'Only superusers have permission to delete users.')
+        return redirect('register:users')
+
+    # Prevent users from deleting themselves
+    if int(user_id) == request.user.id:
+        messages.error(request, 'You cannot delete your own account.')
+        return redirect('register:users')
+
+    user = get_object_or_404(User, id=user_id)
+    username = user.username
+    user.delete()
+
+    messages.success(request, f'User "{username}" deleted successfully.')
+    return redirect('register:users')

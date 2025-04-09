@@ -29,4 +29,10 @@ urlpatterns = [
     # Search API endpoints
     path('api/search-staff/', views.search_staff, name='search_staff'),
     path('api/search-cards/', views.search_cards, name='search_cards'),
+
+    # User management
+    path('users/', views.users, name='users'),
+    path('users/add/', views.add_user, name='add_user'),
+    path('users/edit/<int:user_id>/', views.edit_user, name='edit_user'),
+    path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
 ]

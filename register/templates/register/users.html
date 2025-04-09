@@ -1,0 +1,187 @@
+{% extends 'register/base.html' %}
+
+{% block title %}Users - Fire Register{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Users</h1>
+        <p class="lead">Manage all users in the system</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'register:add_user' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add User
+        </a>
+    </div>
+</div>
+
+<!-- Search form -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="get" action="{% url 'register:users' %}" class="d-flex">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Search users..." value="{{ search_query }}">
+                <button class="btn btn-outline-primary" type="submit">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                {% if search_query %}
+                <a href="{% url 'register:users' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x"></i> Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if users %}
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>
+                        <a href="?sort=username&dir={% if sort_by == 'username' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Username
+                            {% if sort_by == 'username' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-alpha-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-alpha-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=name&dir={% if sort_by == 'name' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Name
+                            {% if sort_by == 'name' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-alpha-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-alpha-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=email&dir={% if sort_by == 'email' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Email
+                            {% if sort_by == 'email' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-alpha-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-alpha-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=is_active&dir={% if sort_by == 'is_active' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Status
+                            {% if sort_by == 'is_active' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=is_staff&dir={% if sort_by == 'is_staff' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Staff
+                            {% if sort_by == 'is_staff' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=is_superuser&dir={% if sort_by == 'is_superuser' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Superuser
+                            {% if sort_by == 'is_superuser' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?sort=fire_marshal&dir={% if sort_by == 'fire_marshal' and sort_dir == 'asc' %}desc{% else %}asc{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="text-decoration-none">
+                            Fire Marshal
+                            {% if sort_by == 'fire_marshal' %}
+                                {% if sort_dir == 'asc' %}
+                                    <i class="bi bi-sort-down"></i>
+                                {% else %}
+                                    <i class="bi bi-sort-up"></i>
+                                {% endif %}
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.get_full_name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_staff %}
+                            <span class="badge bg-info">Yes</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_superuser %}
+                            <span class="badge bg-warning">Yes</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.groups.all|dictsort:"name"|join:" " == "Fire Marshal" %}
+                            <span class="badge bg-info">Yes</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'register:edit_user' user.id %}" class="btn btn-sm btn-outline-primary">
+                            Edit
+                        </a>
+                        {% if user.id != request.user.id %}
+                        <form method="post" action="{% url 'register:delete_user' user.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                    onclick="return confirm('Are you sure you want to delete {{ user.username }}? This action cannot be undone.')">
+                                Delete
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        No users found. <a href="{% url 'register:add_user' %}">Add one now</a>.
+    </div>
+{% endif %}
+{% endblock %}
