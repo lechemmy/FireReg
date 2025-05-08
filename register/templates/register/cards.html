@@ -426,7 +426,7 @@
                     btnGroup.className = 'btn-group btn-group-sm';
 
                     const editBtn = document.createElement('a');
-                    editBtn.href = `/register/cards/edit/${card.id}/`;
+                    editBtn.href = `/cards/edit/${card.id}/`;
                     editBtn.className = 'btn btn-primary';
                     editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit';
                     btnGroup.appendChild(editBtn);
@@ -441,6 +441,37 @@
 
                     actionsCell.appendChild(btnGroup);
                     row.appendChild(actionsCell);
+
+                    // Create delete modal for this card
+                    const modalDiv = document.createElement('div');
+                    modalDiv.className = 'modal fade';
+                    modalDiv.id = `deleteCardModal${card.id}`;
+                    modalDiv.setAttribute('tabindex', '-1');
+                    modalDiv.setAttribute('aria-labelledby', `deleteCardModalLabel${card.id}`);
+                    modalDiv.setAttribute('aria-hidden', 'true');
+
+                    modalDiv.innerHTML = `
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteCardModalLabel${card.id}">Confirm Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete the card for <strong>${card.name}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form method="post" action="/cards/delete/${card.id}/" style="display: inline;">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${document.querySelector('[name=csrfmiddlewaretoken]').value}">
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    document.body.appendChild(modalDiv);
                     {% endif %}
 
                     tableBody.appendChild(row);
